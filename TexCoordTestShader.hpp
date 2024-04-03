@@ -1,7 +1,9 @@
 #pragma once
 #include "Shader.hpp"
 
-
+/// <summary>
+/// Shader used for testing that colours objects according to their texture coordinates.
+/// </summary>
 class TexCoordTestShader : public Shader
 {
 public:

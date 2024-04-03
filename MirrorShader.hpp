@@ -2,6 +2,9 @@
 #include "Shader.hpp"
 #include "GeomUtil.hpp"
 
+/// <summary>
+/// Shader modelling perfect mirror reflectance.
+/// </summary>
 class MirrorShader : public Shader
 {
 public:

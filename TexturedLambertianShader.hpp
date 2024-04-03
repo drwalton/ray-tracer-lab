@@ -2,6 +2,10 @@
 #include "Shader.hpp"
 #include "tgaimage.h"
 
+/// <summary>
+/// Lambertian reflectance shader that samples albedo values from a texture.
+/// The texture should be stored as an image file (TGAImage instance).
+/// </summary>
 class TexturedLambertianShader : public Shader
 {
 private:

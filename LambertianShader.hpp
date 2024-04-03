@@ -1,7 +1,9 @@
 #pragma once
 #include "Shader.hpp"
 
-
+/// <summary>
+/// Shader for diffuse, Lambertian surfaces of a single colour.
+/// </summary>
 class LambertianShader : public Shader
 {
 private:

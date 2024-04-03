@@ -1,7 +1,9 @@
 #pragma once
 #include "Shader.hpp"
 
-
+/// <summary>
+/// Shader using the classic Phong reflectance model to add specular highlights.
+/// </summary>
 class PhongShader : public Shader
 {
 private:

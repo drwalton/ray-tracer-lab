@@ -1,6 +1,9 @@
 #pragma once
 #include <Eigen/Dense>
 
+/// <summary>
+/// Struct encoding a Ray, with an origin and a direction.
+/// </summary>
 struct Ray
 {
 	Eigen::Vector3f origin, direction;

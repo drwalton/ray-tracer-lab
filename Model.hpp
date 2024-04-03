@@ -3,13 +3,16 @@
 #include <vector>
 #include <Eigen/Dense>
 
+/// <summary>
+/// A Model stores mesh data and can load this data from an obj file.
+/// </summary>
 class Model {
 private:
-	std::vector<Eigen::Vector3f> verts_, vns_;              // Stores Vec3f for every model vertex world position
-	std::vector<std::vector<int> > faces_;  // Stores a vector of vector<int> that represent indices in verts_ for vertices comprising a face
-	std::vector<std::vector<int> > tfaces_;  // Stores a vector of vector<int> that represent indices in verts_ for vertices comprising a face
-	std::vector<std::vector<int> > nfaces_;  // Stores a vector of vector<int> that represent indices in verts_ for vertices comprising a face
-	std::vector<Eigen::Vector2f> vts_;				// Stores Vec3f for every model vertex texture coordinate
+	std::vector<Eigen::Vector3f> verts_, vns_; // Vertices and vertex normals
+	std::vector<Eigen::Vector2f> vts_; // Texture coordinates
+	std::vector<std::vector<int> > faces_;  // Face indices of the vertices
+	std::vector<std::vector<int> > tfaces_;  // Face indices of the texture coordinates
+	std::vector<std::vector<int> > nfaces_;  // Face indices of the vertex normals
 public:
 	Model(const char *filename);
 	~Model();
