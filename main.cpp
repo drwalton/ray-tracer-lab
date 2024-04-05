@@ -20,6 +20,9 @@
 #include "Model.hpp"
 #include "AABBMesh.hpp"
 
+/// <summary>
+/// Load a JSON config file using the nlohmann library.
+/// </summary>
 nlohmann::json loadConfig(const std::string& filename)
 {
 	std::ifstream configStream(filename);
@@ -27,13 +30,19 @@ nlohmann::json loadConfig(const std::string& filename)
 	return config;
 }
 
+/// <summary>
+/// Load an Eigen Vector3f from a config file.
+/// Call as for example loadVec3FromConfig(config["myVector3"]);
+/// </summary>
 Eigen::Vector3f loadVec3FromConfig(const nlohmann::json& config)
 {
 	return Eigen::Vector3f(config[0], config[1], config[2]);
 }
 
+
 int main(int argc, char* argv[]) {
 
+	// *** Load the config file ***
 	auto config = loadConfig("../config/config.json");
 
 	int pixHeight = config["pixHeight"], pixWidth = config["pixWidth"];
@@ -43,6 +52,7 @@ int main(int argc, char* argv[]) {
 		config["clearColor"][0], config["clearColor"][1],
 		config["clearColor"][2], config["clearColor"][3]);
 
+	// *** Set up camera and output image ***
 	Camera cam(
 		loadVec3FromConfig(config["cameraPos"]),
 		loadVec3FromConfig(config["cameraForward"]),
@@ -51,8 +61,6 @@ int main(int argc, char* argv[]) {
 		config["cameraFov"]);
 
 	TGAImage outImage(pixWidth, pixHeight, TGAImage::RGB);
-	TGAImage spotTexture;
-	spotTexture.read_tga_file("../models/spot.tga");
 
 	Eigen::Vector3f
 		red(1.f, 0.f, 0.f),
@@ -60,6 +68,9 @@ int main(int argc, char* argv[]) {
 		aqua(0.f, .8f, .8f),
 		lavender(178.f / 255.f, 164.f / 255.f, 212.f / 255.f);
 
+	// *** Load shaders and textures ***
+	TGAImage spotTexture;
+	spotTexture.read_tga_file("../models/spot.tga");
 	LambertianShader redLambertianShader(red);
 	PhongShader bluePlasticShader(blue, Eigen::Vector3f(1.f, 1.f, 1.f), 100.f);
 	LambertianShader aquaLambertianShader(aqua);
@@ -68,6 +79,7 @@ int main(int argc, char* argv[]) {
 	MirrorShader mirrorShader;
 	TexCoordTestShader texCoordTestShader;
 
+	// *** Set up scene ***
 	Scene scene;
 	scene.renderables.push_back(std::make_unique<Sphere>(&bluePlasticShader, .8f));
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(-2.f, 0.f, 0.f)));
@@ -103,12 +115,14 @@ int main(int argc, char* argv[]) {
 		* rotateY(0.f));
 
 
+	// *** Add lights to scene ***
 	Eigen::Vector3f ambientLight(.1f, .1f, .1f);
 
 	std::vector<std::unique_ptr<Light>> lightSources;
 	lightSources.push_back(std::make_unique<PointLight>(Eigen::Vector3f(-1.f, 3.f, -1.f), 3.f * Eigen::Vector3f(1.f, 1.f, 1.f)));
 	lightSources.push_back(std::make_unique<DirectionalLight>(Eigen::Vector3f(0.f, -1.f, 1.f), .5f * Eigen::Vector3f(1.f, 1.f, 1.f)));
 
+	// *** Render the scene ***
 
 	// Shuffling the scanline order gets better CPU usage between threads
 	// when some lines take longer to render than others.
@@ -154,6 +168,7 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "Render duration " << std::chrono::duration_cast<std::chrono::seconds>(renderTime).count() << " seconds." << std::endl;
 
+	// *** Save the output image ***
 	outImage.flip_vertically();
 	std::string outputFilename = config["outputFilename"];
 	outImage.write_tga_file(outputFilename.c_str());
