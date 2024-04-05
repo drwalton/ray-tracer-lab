@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(direct_ray_tracer LANGUAGES CXX)
+project(ray_tracer_lab LANGUAGES CXX)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 find_package(OpenMP)
