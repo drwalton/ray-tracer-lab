@@ -11,7 +11,6 @@
 #include "TexturedLambertianShader.hpp"
 #include "PhongShader.hpp"
 #include "MirrorShader.hpp"
-#include "TexCoordTestShader.hpp"
 #include "Model.hpp"
 #include "AABBMesh.hpp"
 #include <iostream>
@@ -53,7 +52,6 @@ int main(int argc, char* argv[]) {
 	LambertianShader lavenderLambertianShader(lavender);
 	TexturedLambertianShader spotShader(&spotTexture);
 	MirrorShader mirrorShader;
-	TexCoordTestShader texCoordTestShader;
 
 	Scene scene;
 	scene.renderables.push_back(std::make_unique<Sphere>(&bluePlasticShader, .8f));
@@ -72,10 +70,10 @@ int main(int argc, char* argv[]) {
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, -6.f)));
 
 	scene.renderables.push_back(std::make_unique<Triangle>(
-		&texCoordTestShader, 
+		&bluePlasticShader, 
 		Eigen::Vector3f(-1.f, 2.f, 1.f),
 		Eigen::Vector3f(1.f, 2.f, 1.f),
-		Eigen::Vector3f(0.f, 1.f, 1.f)));
+		Eigen::Vector3f(0.f, 1.5f, 1.f)));
 	
 	Model spotModel("../models/spot.obj");
 
