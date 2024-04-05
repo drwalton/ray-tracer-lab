@@ -1,5 +1,10 @@
 #include <Eigen/Dense>
 #include <tgaimage.h>
+#include <json/json.hpp>
+#include <iostream>
+#include <vector>
+#include <random>
+#include <chrono>
 #include "Sphere.hpp"
 #include "Plane.hpp"
 #include "Triangle.hpp"
@@ -11,30 +16,39 @@
 #include "TexturedLambertianShader.hpp"
 #include "PhongShader.hpp"
 #include "MirrorShader.hpp"
+#include "TexCoordTestShader.hpp"
 #include "Model.hpp"
 #include "AABBMesh.hpp"
-#include <iostream>
-#include <vector>
-#include <random>
-#include <chrono>
+
+nlohmann::json loadConfig(const std::string& filename)
+{
+	std::ifstream configStream(filename);
+	nlohmann::json config = nlohmann::json::parse(configStream);
+	return config;
+}
+
+Eigen::Vector3f loadVec3FromConfig(const nlohmann::json& config)
+{
+	return Eigen::Vector3f(config[0], config[1], config[2]);
+}
 
 int main(int argc, char* argv[]) {
 
-	std::cout << refract(Eigen::Vector3f(1.f, 0.1f, 0.f).normalized(), Eigen::Vector3f(1.f, 0.f, 0.f).normalized(), 1.4f) << std::endl;
+	auto config = loadConfig("../config/config.json");
 
-	const int pixWidth = 1920;
-	const int pixHeight = 1080;
-	//const int pixWidth = 640;
-	//const int pixHeight = 480;
-	const int maxBounces = 10;
+	int pixHeight = config["pixHeight"], pixWidth = config["pixWidth"];
 
-	TGAColor blackTGA(0,0,0,255);
+	// Color that will be drawn where no objects are present.
+	TGAColor clearColor(
+		config["clearColor"][0], config["clearColor"][1],
+		config["clearColor"][2], config["clearColor"][3]);
 
-	Camera cam(Eigen::Vector3f(0.f, 0.f, -5.f),
-		Eigen::Vector3f(0.f, 0.f, 1.f),
-		Eigen::Vector3f(0.f, 1.f, 0.f),
+	Camera cam(
+		loadVec3FromConfig(config["cameraPos"]),
+		loadVec3FromConfig(config["cameraForward"]),
+		loadVec3FromConfig(config["cameraUp"]),
 		pixWidth, pixHeight,
-		M_PI * 0.25f);
+		config["cameraFov"]);
 
 	TGAImage outImage(pixWidth, pixHeight, TGAImage::RGB);
 	TGAImage spotTexture;
@@ -52,6 +66,7 @@ int main(int argc, char* argv[]) {
 	LambertianShader lavenderLambertianShader(lavender);
 	TexturedLambertianShader spotShader(&spotTexture);
 	MirrorShader mirrorShader;
+	TexCoordTestShader texCoordTestShader;
 
 	Scene scene;
 	scene.renderables.push_back(std::make_unique<Sphere>(&bluePlasticShader, .8f));
@@ -59,6 +74,9 @@ int main(int argc, char* argv[]) {
 
 	scene.renderables.push_back(std::make_unique<Sphere>(&mirrorShader, 1.f));
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, 0.f)));
+
+	scene.renderables.push_back(std::make_unique<Sphere>(&aquaLambertianShader, 0.4f));
+	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(1.5f, 0.5f, -1.5f)));
 
 	scene.renderables.push_back(std::make_unique<Plane>(&aquaLambertianShader, Eigen::Vector3f(0.f, 0.f, -1.f)));
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, 3.f)));
@@ -70,15 +88,15 @@ int main(int argc, char* argv[]) {
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, -6.f)));
 
 	scene.renderables.push_back(std::make_unique<Triangle>(
-		&bluePlasticShader, 
+		&texCoordTestShader,
 		Eigen::Vector3f(-1.f, 2.f, 1.f),
 		Eigen::Vector3f(1.f, 2.f, 1.f),
-		Eigen::Vector3f(0.f, 1.5f, 1.f)));
-	
+		Eigen::Vector3f(0.f, 1.f, 1.f)));
+
 	Model spotModel("../models/spot.obj");
 
 	scene.renderables.push_back(std::make_unique<AABBMesh>(
-		&spotShader, 
+		&spotShader,
 		&spotModel));
 	scene.renderables.back()->modelToWorld(
 		makeTranslationMatrix(Eigen::Vector3f(2.f, 0.f, 0.f))
@@ -96,14 +114,16 @@ int main(int argc, char* argv[]) {
 	// when some lines take longer to render than others.
 	std::vector<unsigned int> scanlines(pixHeight);
 	for (int i = 0; i < pixHeight; ++i) scanlines[i] = i;
-	std::random_device rd;
-	std::mt19937 g(rd());
-	// Comment out this line to render scanlines in order.
-	std::shuffle(scanlines.begin(), scanlines.end(), g);
+
+	if (config["shuffleScanlines"]) {
+		std::random_device rd;
+		std::mt19937 g(rd());
+		std::shuffle(scanlines.begin(), scanlines.end(), g);
+	}
 
 	auto startTime = std::chrono::steady_clock::now();
 
-	#pragma omp parallel for
+#pragma omp parallel for
 	for (int y = 0; y < pixHeight; ++y) {
 		for (int x = 0; x < pixWidth; ++x) {
 			Ray ray = cam.getRay(x, scanlines[y]);
@@ -112,7 +132,7 @@ int main(int argc, char* argv[]) {
 				Eigen::Vector3f color = hitInfo.shader->getColor(
 					hitInfo, &scene,
 					lightSources, ambientLight,
-					0, maxBounces);
+					0, config["maxBounces"]);
 
 				color.x() = std::min(color.x(), 1.f);
 				color.y() = std::min(color.y(), 1.f);
@@ -122,9 +142,9 @@ int main(int argc, char* argv[]) {
 				outImage.set(x, scanlines[y], tgaColor);
 			}
 			else
-				outImage.set(x, scanlines[y], blackTGA);
+				outImage.set(x, scanlines[y], clearColor);
 		}
-		if (omp_get_thread_num() == omp_get_num_threads()-1) {
+		if (omp_get_thread_num() == omp_get_num_threads() - 1) {
 			std::clog << "\rScanlines remaining: " << (pixHeight - y) << ' ' << std::flush;
 		}
 
@@ -135,7 +155,9 @@ int main(int argc, char* argv[]) {
 	std::cout << "Render duration " << std::chrono::duration_cast<std::chrono::seconds>(renderTime).count() << " seconds." << std::endl;
 
 	outImage.flip_vertically();
-	outImage.write_tga_file("output.tga");
+	std::string outputFilename = config["outputFilename"];
+	outImage.write_tga_file(outputFilename.c_str());
 
 	return 0;
 }
+

@@ -68,3 +68,4 @@ endif()
 
 include_directories(3rdParty/tgaimage)
 include_directories(3rdParty/eigen-3.4.0)
+include_directories(3rdParty/nlohmann)
