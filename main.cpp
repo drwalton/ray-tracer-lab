@@ -87,9 +87,6 @@ int main(int argc, char* argv[]) {
 	scene.renderables.push_back(std::make_unique<Sphere>(&mirrorShader, 1.f));
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, 0.f)));
 
-	scene.renderables.push_back(std::make_unique<Sphere>(&aquaLambertianShader, 0.4f));
-	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(1.5f, 0.5f, -1.5f)));
-
 	scene.renderables.push_back(std::make_unique<Plane>(&aquaLambertianShader, Eigen::Vector3f(0.f, 0.f, -1.f)));
 	scene.renderables.back()->modelToWorld(makeTranslationMatrix(Eigen::Vector3f(0.f, 0.f, 3.f)));
 
